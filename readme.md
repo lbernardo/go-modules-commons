@@ -14,7 +14,7 @@ go get github.com/lbernardo/go-modules-commons/services/<service>
 - auth
 - rabbitmq
 - sealer
-
+- firebase
 
 ## Requirements
 
@@ -55,6 +55,8 @@ app:
       name: mydb # database name
   queue: # rabbitmq configurations
     host: <HOST_WITH_PASSWORD> # rabbitmq host
+  firebase: # firebase configurations
+    credentialsFile: configs/credentialsFile.json # the firebase credentials file
 ```
 
 > You can set any configurations and read with `*viper.Viper`
