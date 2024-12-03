@@ -1,4 +1,4 @@
-package mondodb
+package mongodb
 
 import "go.uber.org/fx"
 
