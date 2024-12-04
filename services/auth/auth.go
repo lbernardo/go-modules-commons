@@ -17,10 +17,10 @@ type Auth struct {
 }
 
 type Claims struct {
-	Sub   string `json:"sub"`
-	Email string `json:"email"`
-	Group string `json:"group"`
-	Exp   any    `json:"exp"`
+	Sub   string                 `json:"sub"`
+	Email string                 `json:"email"`
+	Data  map[string]interface{} `json:"data"`
+	Exp   any                    `json:"exp"`
 }
 
 func NewAuth(cfg *viper.Viper, logger *zap.Logger) *Auth {
@@ -28,11 +28,11 @@ func NewAuth(cfg *viper.Viper, logger *zap.Logger) *Auth {
 }
 
 // GenerateToken generate a new token with claims and return this
-func (a *Auth) GenerateToken(id string, username string, group string) (string, error) {
+func (a *Auth) GenerateToken(id string, username string, data map[string]any) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub":   id,
 		"email": username,
-		"group": group,
+		"data":  data,
 		"exp":   time.Now().Add(time.Hour * 24).Unix(),
 	})
 	tokenString, err := token.SignedString([]byte(a.secret))
@@ -69,7 +69,7 @@ func (a *Auth) GetClaims(tokenString string) (*Claims, error) {
 	return &Claims{
 		Sub:   claims["sub"].(string),
 		Email: claims["email"].(string),
-		Group: claims["group"].(string),
+		Data:  claims["data"].(map[string]interface{}),
 		Exp:   claims["exp"],
 	}, nil
 }
@@ -92,23 +92,5 @@ func (a *Auth) MiddlewareDefault(r *gin.Context) {
 	}
 	r.Set("id", claims.Sub)
 	r.Set("email", claims.Email)
-	r.Set("group", claims.Group)
-	r.Next()
-}
-
-// MiddlewareOnlyAdmin is used when you need authenticate route only by admin groups
-func (a *Auth) MiddlewareOnlyAdmin(r *gin.Context) {
-	claims, err := a.checkMiddleware(r)
-	if err != nil {
-		r.AbortWithStatus(http.StatusUnauthorized)
-		return
-	}
-	if claims.Group != "admin" {
-		r.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "user needs admin group"})
-		return
-	}
-	r.Set("id", claims.Sub)
-	r.Set("email", claims.Email)
-	r.Set("group", claims.Group)
 	r.Next()
 }
