@@ -11,7 +11,9 @@ func TestAuth_GenerateToken(t *testing.T) {
 	vp := viper.New()
 	vp.Set("app.auth.secret", "secret")
 	auth := NewAuth(vp, zap.NewExample())
-	token, err := auth.GenerateToken("123-456-789-0", "auth.test@gmail.com", "admin")
+	token, err := auth.GenerateToken("123-456-789-0", "auth.test@gmail.com", map[string]interface{}{
+		"group": "admin",
+	})
 	if err != nil {
 		t.Errorf("GenerateToken() error = %v", err)
 	}
@@ -36,8 +38,8 @@ func TestAuth_GenerateToken(t *testing.T) {
 	if claims.Sub != "123-456-789-0" {
 		t.Errorf("we expect 123-456-789-0 got %v", claims.Sub)
 	}
-	if claims.Group != "admin" {
-		t.Errorf("we expect admin got %v", claims.Group)
+	if claims.Data["group"] != "admin" {
+		t.Errorf("we expect admin got %v", claims.Data)
 	}
 
 }
