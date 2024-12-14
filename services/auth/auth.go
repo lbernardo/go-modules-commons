@@ -28,16 +28,25 @@ func NewAuth(cfg *viper.Viper, logger *zap.Logger) *Auth {
 }
 
 // GenerateToken generate a new token with claims and return this
-func (a *Auth) GenerateToken(id string, username string, data map[string]any, exp int64) (string, error) {
-	if exp == 0 {
-		exp = time.Now().Add(time.Hour * 24).Unix()
+func (a *Auth) GenerateToken(id string, username string, data map[string]any, options ...GenerateTokenOption) (string, error) {
+	mapClaims := jwt.MapClaims{
+		"sub":      id,
+		"email":    username,
+		"username": username,
+		"data":     data,
 	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub":   id,
-		"email": username,
-		"data":  data,
-		"exp":   exp,
-	})
+	defaultOptions := &generateTokenOption{
+		DoesNotExpire: false,
+		Expiration:    time.Now().Add(time.Hour * 24),
+	}
+
+	for _, option := range options {
+		option(defaultOptions)
+	}
+	if !defaultOptions.DoesNotExpire {
+		mapClaims["exp"] = defaultOptions.Expiration.Unix()
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, mapClaims)
 	tokenString, err := token.SignedString([]byte(a.secret))
 	return tokenString, err
 }
